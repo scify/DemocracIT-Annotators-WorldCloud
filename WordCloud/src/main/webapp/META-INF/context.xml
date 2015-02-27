@@ -9,16 +9,11 @@
             name="jdbc/word_cloud" 
             testOnBorrow="true" 
             validationQuery="SELECT 1"
-            username="democracit_backend" 
-            password="d3m0cr!!it" 
+            username="enter_username" 
+            password="enter_password" 
             removeAbandoned="true" 
             removeAbandonedTimeout="600" 
             type="javax.sql.DataSource" 
-            url="jdbc:postgresql://democracit.caijkvjiftca.eu-west-1.rds.amazonaws.com:5432/democracit"
+            url="enter_db_host_url"
   />
 </Context>
-<!--url="jdbc:postgresql://localhost:25432/democracit_staging"-->
-<!--url="jdbc:postgresql://localhost:25432/democracit"-->
-<!--              username="postgres"
-              password="posgresql123"
-              url="jdbc:postgresql://localhost:5432/democracit"-->
