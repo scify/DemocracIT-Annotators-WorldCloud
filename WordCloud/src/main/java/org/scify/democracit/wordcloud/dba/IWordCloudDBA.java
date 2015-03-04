@@ -30,14 +30,15 @@ public interface IWordCloudDBA {
     /**
      *
      * @param term the term to store
-     * @param frequency the term frequency
      * @param commentID where the term originates from
      * @return true if the term (for the specified commentID) already exists in
      * the DB
      * @throws java.sql.SQLException
      */
-    public boolean containsTerm(String term, Float frequency, long commentID) throws SQLException;
+    public boolean containsTerm(String term, long commentID) throws SQLException;
 
+    public void updateTerm(String term, Float frequency, long commentID) throws SQLException;
+    
     /**
      * Custom implementation (could use BatchUpdates)
      *

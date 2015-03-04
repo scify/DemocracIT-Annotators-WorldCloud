@@ -386,7 +386,7 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
                         }
                     } else {
                         String nullWordFreq = (aFreq == null) ? wordA : (bFreq == null) ? wordB : "";
-                        System.out.println("\tNo occurence for " + nullWordFreq);
+                        logger.warn("\tNo occurence for " + nullWordFreq);
                     }
                 } else {
                     logger.warn("\tWUT: length! " + biTermTokens.length);

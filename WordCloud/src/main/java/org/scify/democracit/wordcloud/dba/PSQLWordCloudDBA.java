@@ -56,7 +56,7 @@ public class PSQLWordCloudDBA extends WordCloudDBA implements IWordCloudDBA {
     }
 
     @Override
-    public boolean containsTerm(String term, Float frequency, long commentID) throws SQLException {
+    public boolean containsTerm(String term, long commentID) throws SQLException {
         boolean contains = false;
         String sql = "SELECT id FROM comment_term WHERE comment_id = ? AND term_string = ?;";
         Connection dbConnection = null;
@@ -78,6 +78,23 @@ public class PSQLWordCloudDBA extends WordCloudDBA implements IWordCloudDBA {
         return contains;
     }
 
+    @Override
+    public void updateTerm(String term, Float frequency, long commentID) throws SQLException {
+        String sql = "UPDATE comment_term SET term_frequency = ? WHERE commend_id = ? AND term_string = ? AND n_gram_order = ?;";
+        Connection dbConnection = null;
+        PreparedStatement preparedStatement = null;
+        try {
+            dbConnection = dataSource.getConnection();
+            preparedStatement = dbConnection.prepareStatement(sql);
+            preparedStatement.setInt(1, frequency.intValue());
+            preparedStatement.setLong(2, commentID);
+            preparedStatement.setString(3, term);
+            preparedStatement.executeUpdate();
+        } finally {
+            SQLUtils.release(dbConnection, preparedStatement, null);
+        }
+    }
+
     /**
      * Uses simple list iteration (not batch updates)
      *
@@ -88,8 +105,10 @@ public class PSQLWordCloudDBA extends WordCloudDBA implements IWordCloudDBA {
     public void batchStoreTerms(List<TermToStore> lsToStore, int nGramOrder) throws SQLException {
         logger.info(String.format("Storing %d comments_terms in DB...", lsToStore.size()));
         for (TermToStore termToStore : lsToStore) {
-            if (!containsTerm(termToStore.getTerm(), termToStore.getFreq(), termToStore.getCommentID())) {
+            if (!containsTerm(termToStore.getTerm(), termToStore.getCommentID())) {
                 storeTerm(termToStore.getTerm(), termToStore.getFreq(), termToStore.getCommentID(), nGramOrder);
+            } else { // update term if needed (?)
+
             }
         }
         logger.info(String.format("Storing %d comments_terms in DB...Done", lsToStore.size()));
@@ -97,10 +116,10 @@ public class PSQLWordCloudDBA extends WordCloudDBA implements IWordCloudDBA {
 
     @Override
     public WordCloudResponse loadTermCloud(int process_id, boolean isConsultation, int limit, int n_gram_order) throws SQLException {
-        logger.info(String.format("loading term cloud for %s ID : %d - max: %d terms", 
+        logger.info(String.format("loading term cloud for %s ID : %d - max: %d terms",
                 isConsultation ? "consultation" : "article", process_id, limit));
         LinkedHashMap<String, Double> res = new LinkedHashMap();
-        
+
         String sql = "SELECT term_string, sum(term_frequency) as total_freq "
                 + "FROM comment_term "
                 + "INNER JOIN comments ON comments.id = comment_term.comment_id "

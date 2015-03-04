@@ -101,23 +101,4 @@ public class NGramTokenizer implements ITokenizer {
         }
         return nGrams;
     }
-
-    public static void main(String[] args) {
-
-        ITokenizer tok = new NGramTokenizer(false, null, Locale.ENGLISH);
-        String s = "Two bodies were found but a further 10 people were missing after the incident near the island of Farmakonisi on Monday. "
-                + "Sixteen people were rescued.\n"
-                + "The coastguard says it judged it safer to keep migrants on their own boat than to take them aboard in bad weather.\n"
-                + "Greek officials say panicking migrants caused the boat to capsize themselves.\n"
-                + "According to reports, two migrants fell or dived overboard and others rushed to one side of the boat to rescue them, causing the boat to tip.\n"
-                + "The deaths of a woman and a child have been confirmed.\n"
-                + "One non-government organisation, Pro Asyl, accused the Greek authorities of trying illegally to prevent the migrants, believed to be 26 Afghans and two Syrians, landing in Greece.\n"
-                + "\"It is highly likely that this action by the Greek coastguard was an illegal push-back operation rather than a rescue at sea,\" said Karl Kopp, the NGO's director of European affairs.\n"
-                + "Another NGO, Ecre, said: \"Survivors tell that they were crying out for help, given that a large number of children and babies were on board.\"\n"
-                + "Greece is one of the main destinations for clandestine migrants and refugees seeking to enter the EU, through its land or sea borders.\n"
-                + "Correspondents say there has been a sharp increase in sea-borne refugee traffic over the past year because of stricter controls on the Greek-Turkish land border to the north and the ongoing war in Syria.";
-
-        System.out.println(tok.tokenize(s, 2));
-
-    }
 }
