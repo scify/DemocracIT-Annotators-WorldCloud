@@ -17,7 +17,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
-import org.scify.democracit.model.Comment;
+import org.scify.democracit.dao.model.Comments;
 import org.scify.democracit.demoutils.general.CollectionsCalcs;
 import org.scify.democracit.wordcloud.dba.IWordCloudDBA;
 import org.scify.democracit.wordcloud.freqextract.IFreqExtractor;
@@ -104,7 +104,7 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
      * @throws java.io.IOException
      */
     @Override
-    public void generateWordCloud(Collection<Comment> commentsList, long id, boolean isConsultation) throws IOException, SQLException {
+    public void generateWordCloud(Collection<Comments> commentsList, long id, boolean isConsultation) throws IOException, SQLException {
         // init maps
         hmUnLemmatizedOneWordTerms = new HashMap<>();
         hmLemmatizedTwoWordTerms = new HashMap<>();
@@ -128,7 +128,7 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
             // verbosity
             int iTotal = commentsList.size(), i = 0;
             logger.info(String.format("Processing %d comments...%n", iTotal));
-            for (Comment eachCand : commentsList) {
+            for (Comments eachCand : commentsList) {
                 i++; // update counter
                 if (i % 1000 == 0) {
                     String sout = MessageFormat.format("Completed {0,number,#.##%}...",
@@ -137,7 +137,7 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
                 }
                 // get Content attributes
                 String sComment = eachCand.getComment();
-                long lCommentID = eachCand.getID();
+                long lCommentID = eachCand.getId();
                 // nGramOrder = 1 means that lemmatisers will be active when possible.
                 nGramOrder = 1;
                 removeStopWords = true;

@@ -8,7 +8,7 @@ package org.scify.democracit.wordcloud.impl;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
-import org.scify.democracit.model.Comment;
+import org.scify.democracit.dao.model.Comments;
 
 /**
  *
@@ -26,6 +26,6 @@ public interface IWordCloudExtractor {
      * @throws java.io.IOException
      * @throws java.sql.SQLException
      */
-    public void generateWordCloud(Collection<Comment> cComments, long id, boolean isConsultation) throws IOException, SQLException;
+    public void generateWordCloud(Collection<Comments> cComments, long id, boolean isConsultation) throws IOException, SQLException;
 
 }

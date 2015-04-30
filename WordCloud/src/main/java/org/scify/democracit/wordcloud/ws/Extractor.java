@@ -3,10 +3,8 @@ package org.scify.democracit.wordcloud.ws;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import javax.annotation.PostConstruct;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -15,17 +13,17 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
+import org.scify.democracit.dao.model.Comments;
 import org.scify.democracit.demoutils.DataAccess.DBUtils.JSONMessage;
-import org.scify.democracit.model.Comment;
-import org.scify.democracit.demoutils.DataAccess.ds.CommentsDSRetriever;
-import org.scify.democracit.demoutils.DataAccess.ds.ICommentsDSRetriever;
+import org.scify.democracit.demoutils.DataAccess.ds.CommentsJPARetriever;
+import org.scify.democracit.demoutils.DataAccess.ds.ICommentsRetriever;
+import org.scify.democracit.demoutils.logging.DBAJPAEventLogger;
 import org.scify.democracit.wordcloud.dba.IWordCloudDBA;
-import org.scify.democracit.wordcloud.dba.PSQLWordCloudDBA;
 import org.scify.democracit.wordcloud.impl.IWordCloudExtractor;
 import org.scify.democracit.wordcloud.impl.InRAMWordCloudExtractor;
-import org.scify.democracit.demoutils.logging.DBAEventLogger;
 import org.scify.democracit.demoutils.logging.ILogger;
 import org.scify.democracit.demoutils.text.HtmlDocumentCleaner;
+import org.scify.democracit.wordcloud.dba.JPAWordCloud;
 import org.scify.democracit.wordcloud.utils.Configuration;
 
 // example call for test
@@ -47,28 +45,45 @@ public class Extractor extends HttpServlet {
     private ILogger logger;
     private boolean bInit = false;
 
-    /**
-     * Inject resources at the initialization of the WS
-     */
-    @PostConstruct
-    protected void initialize() {
-        if (bInit) {
-            return;
-        }
-        // inject datasource connection
-        Context initContext;
-        try {
-            initContext = new InitialContext();
-            Context envContext = (Context) initContext.lookup("java:/comp/env");
-            dataSource = (DataSource) envContext.lookup("jdbc/word_cloud");
-//            logger = new BaseEventLogger();
-            logger = new DBAEventLogger(dataSource);
-            bInit = true;
-        } catch (NamingException ex) {
-            ex.printStackTrace();
+    private EntityManagerFactory emf;
+    public static final String PERSISTENCE_RESOURCE = "org.scify_DemoModel_jar_0.1-SNAPSHOTPU";
+
+    @Override
+    public void init() throws ServletException {
+        // init persistence manager
+        emf = Persistence.createEntityManagerFactory(PERSISTENCE_RESOURCE);
+        // init logging
+        logger = DBAJPAEventLogger.getInstance(emf);
+    }
+
+    @Override
+    public void destroy() {
+        if (emf != null) {
+            emf.close();
         }
     }
 
+//    /**
+//     * Inject resources at the initialization of the WS
+//     */
+//    @PostConstruct
+//    protected void initialize() {
+//        if (bInit) {
+//            return;
+//        }
+//        // inject datasource connection
+//        Context initContext;
+//        try {
+//            initContext = new InitialContext();
+//            Context envContext = (Context) initContext.lookup("java:/comp/env");
+//            dataSource = (DataSource) envContext.lookup("jdbc/word_cloud");
+//            logger = new BaseEventLogger();
+//            logger = new DBADSEventLogger(dataSource);
+//            bInit = true;
+//        } catch (NamingException ex) {
+//            ex.printStackTrace();
+//        }
+//    }
     /**
      * @param request the request
      * @param response the response
@@ -109,16 +124,17 @@ public class Extractor extends HttpServlet {
         long activity_id = logger.registerActivity(iProcessId, sModulName,
                 new JSONMessage(sModulName.concat(" Initializing...")).toJSON());
         // initiate process
-        Collection<Comment> cComments = new ArrayList<>();
+        Collection<Comments> cComments = new ArrayList<>();
         IWordCloudDBA storage;
         IWordCloudExtractor extractor;
-        ICommentsDSRetriever comments_retriever;
+        ICommentsRetriever comments_retriever;
         try {
             out = new PrintStream(response.getOutputStream());
             // init storage module
-            storage = new PSQLWordCloudDBA(dataSource, configuration, logger);
+//            storage = new PSQLWordCloudDBA(dataSource, configuration, logger);
+            storage = new JPAWordCloud(emf, logger);
             // initialize content/segment fetcher module
-            comments_retriever = new CommentsDSRetriever(dataSource);
+            comments_retriever = CommentsJPARetriever.getInstance(emf);
             if (consultation_id != 0) {
                 cComments = comments_retriever.getCommentsPerConsultationID(consultation_id);
             } else if (article_id != 0) {
@@ -144,9 +160,9 @@ public class Extractor extends HttpServlet {
         }
     }
 
-    private Collection<Comment> cleanComments(Collection<Comment> cComments) {
-        Collection<Comment> res = new ArrayList<>();
-        for (Comment comment : cComments) {
+    private Collection<Comments> cleanComments(Collection<Comments> cComments) {
+        Collection<Comments> res = new ArrayList<>();
+        for (Comments comment : cComments) {
             comment = HtmlDocumentCleaner.cleanCommentFromHtml(comment);
             res.add(comment);
         }

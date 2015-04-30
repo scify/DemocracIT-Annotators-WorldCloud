@@ -6,23 +6,12 @@
 package org.scify.democracit.wordcloud.dba;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
-import org.scify.democracit.model.Comment;
 import org.scify.democracit.demoutils.logging.ILogger;
 import org.scify.democracit.wordcloud.model.TermResult;
 
@@ -79,42 +68,6 @@ public class WordCloudDBA {
             }
         } else {
             logger.warn("Cannot write to " + sPath);
-        }
-    }
-
-    /**
-     * Custom helper method
-     *
-     * @param toRestore
-     * @param encoding
-     * @return
-     * @throws java.io.IOException
-     */
-    public List fromFileAsCommentList(String toRestore, String encoding) throws IOException {
-        List lsRes = new ArrayList<>();
-        File fFile = new File(toRestore);
-        FileInputStream fstream = null;
-        if (fFile.canRead()) {
-            try {
-                fstream = new FileInputStream(fFile);
-                DataInputStream in = new DataInputStream(fstream);
-                BufferedReader br = new BufferedReader(new InputStreamReader(in, Charset.forName(encoding)));
-                JsonElement jsonElem = new JsonParser().parse(br);
-                JsonArray array = jsonElem.getAsJsonArray();
-                for (JsonElement eachSegStr : array) {
-                    Gson gson = new Gson();
-                    Comment eachSeg = gson.fromJson(eachSegStr, Comment.class);
-                    lsRes.add(eachSeg);
-                }
-                return lsRes;
-            } finally {
-                if (fstream != null) {
-                    fstream.close();
-                }
-            }
-        } else {
-            logger.warn("Could not read from file " + toRestore);
-            return null;
         }
     }
 

@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.scify.democracit.wordcloud.lemmatization.ILemmatizer;
-import org.scify.democracit.demoutils.logging.DBAEventLogger;
+import org.scify.democracit.demoutils.logging.DBADSEventLogger;
 import org.scify.democracit.demoutils.logging.ILogger;
 import org.scify.democracit.wordcloud.tokenization.ITokenizer;
 import org.scify.democracit.wordcloud.tokenization.NGramTokenizer;
