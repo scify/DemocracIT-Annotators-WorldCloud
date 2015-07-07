@@ -91,4 +91,9 @@ public class JPAWordCloud implements IWordCloudDBA {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
+    public WordCloudResponse loadTermCloud(List<Integer> comments_or_discussion_thread_ids, boolean isCommentsArray, int max_terms, int n_gram_order) throws SQLException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
 }

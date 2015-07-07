@@ -5,8 +5,14 @@
  */
 package org.scify.democracit.wordcloud.ws;
 
+import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -73,30 +79,46 @@ public class WordCloud extends HttpServlet {
             throws ServletException, IOException {
 
         response.setContentType("application/json;charset=UTF-8");
-//        response.setContentType("text/html;charset=UTF-8");
-        int consultation_id;
-        int article_id;
+
+        int consultation_id = 0;
+        int article_id = 0;
         int n_gram_order = 0;
-        String sConsultationID = request.getParameter("consultation_id");
-        if (sConsultationID == null) {
-            consultation_id = 0;
-        } else {
-            consultation_id = Integer.parseInt(sConsultationID);
+        String sMaxTerms = null;
+        List<Integer> comment_ids = new ArrayList();
+        List<Integer> discussion_thread_ids = new ArrayList();
+        // parse parameters
+        Enumeration<String> params = request.getParameterNames();
+        Map<String, Object> parsed_params = new HashMap();
+        while (params.hasMoreElements()) {
+            String nextParam = params.nextElement();
+            if (nextParam.equalsIgnoreCase(Param.CONSULTATION_ID.getDecl())) {
+                consultation_id = Integer.parseInt(request.getParameter(nextParam));
+            } else if (nextParam.equalsIgnoreCase(Param.ARTICLE_ID.getDecl())) {
+                article_id = Integer.parseInt(request.getParameter(nextParam));
+            } else if (nextParam.equalsIgnoreCase(Param.MAX_TERMS.getDecl())) {
+                sMaxTerms = request.getParameter(nextParam);
+            } else if (nextParam.equalsIgnoreCase(Param.N_GRAM_ORDER.getDecl())) {
+                n_gram_order = Integer.parseInt(request.getParameter(nextParam));
+                if (n_gram_order != 1 || n_gram_order != 2) {
+                    throw new IllegalArgumentException("n_gram_order 1 | 2");
+                }
+            } else if (nextParam.equalsIgnoreCase(Param.COMMENT_IDS.getDecl())) {
+                String insert = request.getParameter(nextParam);
+                List<Integer> expList = new Gson().fromJson(insert, List.class);
+                comment_ids = expList;
+            } else if (nextParam.equalsIgnoreCase(Param.DISCUSSION_THREAD_IDS.getDecl())) {
+                String insert = request.getParameter(nextParam);
+                List<Integer> expList = new Gson().fromJson(insert, List.class);
+                discussion_thread_ids = expList;
+            }
         }
-        String sArticleID = request.getParameter("article_id");
-        if (sArticleID == null) {
-            article_id = 0;
-        } else {
-            article_id = Integer.parseInt(sArticleID);
-        }
+
         if (consultation_id + article_id == 0) {
-            throw new IllegalArgumentException("Provide an Article ID OR a consultation ID please");
+            if (comment_ids.isEmpty() && discussion_thread_ids.isEmpty()) {
+                throw new IllegalArgumentException("Provide an Article ID OR a consultation ID, OR a list of comment IDs OR a list of discussion thread IDs, please");
+            }
         }
-        String sNGram = request.getParameter("n_gram_order");
-        if (sNGram != null && (sNGram.equals("1") || sNGram.equals("2"))) {
-            n_gram_order = Integer.parseInt(sNGram);
-        }
-        String sMaxTerms = request.getParameter("max_terms");
+
         // the consultation / article ID to calculate
         int iProcessId = consultation_id == 0 ? article_id : consultation_id;
         // load config
@@ -114,9 +136,22 @@ public class WordCloud extends HttpServlet {
         try {
             out = response.getWriter();
             storage = new PSQLWordCloudDBA(dataSource, conf, logger);
-            WordCloudResponse res = storage.loadTermCloud(iProcessId, consultation_id != 0, max_terms, n_gram_order);
-            // respond
-            out.print(res.toJSON());
+            WordCloudResponse res = null;
+            if (iProcessId > 0) {
+                res = storage.loadTermCloud(iProcessId, consultation_id != 0, max_terms, n_gram_order);
+            } else {
+                boolean comments = false;
+                if (!comment_ids.isEmpty()) {
+                    comments = true;
+                    res = storage.loadTermCloud(comment_ids, comments, max_terms, n_gram_order);
+                } else if (!discussion_thread_ids.isEmpty()) {
+                    res = storage.loadTermCloud(discussion_thread_ids, comments, max_terms, n_gram_order);
+                }
+            }
+            if (res != null) {
+                // respond
+                out.print(res.toJSON());
+            }
             // register finalized
             logger.finalizedActivity(activity_id, iProcessId, sModulName);
         } catch (Exception ex) {
@@ -126,19 +161,6 @@ public class WordCloud extends HttpServlet {
                 out.close();
             }
         }
-
-//        try (PrintWriter out = response.getWriter()) {
-//            /* TODO output your page here. You may use following sample code. */
-//            out.println("<!DOCTYPE html>");
-//            out.println("<html>");
-//            out.println("<head>");
-//            out.println("<title>Servlet WordCloud</title>");
-//            out.println("</head>");
-//            out.println("<body>");
-//            out.println("<h1>Servlet WordCloud at " + request.getContextPath() + "</h1>");
-//            out.println("</body>");
-//            out.println("</html>");
-//        }
     }
 
     private int getMaxTermsToResponde(Configuration conf, String sMaxTerms) {
@@ -168,6 +190,27 @@ public class WordCloud extends HttpServlet {
         configuration.setWorkingDir(workingDir);
         return configuration;
     }
+
+    public enum Param {
+
+        CONSULTATION_ID("consultation_id"),
+        ARTICLE_ID("article_id"),
+        N_GRAM_ORDER("n_gram_order"),
+        MAX_TERMS("max_terms"),
+        DISCUSSION_THREAD_IDS("discussion_thread_ids"),
+        COMMENT_IDS("comment_ids");
+
+        private String param;
+
+        private Param(String param) {
+            this.param = param;
+        }
+
+        public String getDecl() {
+            return param;
+        }
+    }
+
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
      * Handles the HTTP <code>GET</code> method.

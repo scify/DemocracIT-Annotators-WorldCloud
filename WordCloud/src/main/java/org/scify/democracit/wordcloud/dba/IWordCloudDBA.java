@@ -38,7 +38,7 @@ public interface IWordCloudDBA {
     public boolean containsTerm(String term, long commentID) throws SQLException;
 
     public void updateTerm(String term, Float frequency, long commentID) throws SQLException;
-    
+
     /**
      * Custom implementation (could use BatchUpdates)
      *
@@ -47,6 +47,14 @@ public interface IWordCloudDBA {
      * @throws java.sql.SQLException
      */
     public void batchStoreTerms(List<TermToStore> lsToStore, int nGramOrder) throws SQLException;
-    
+
     public WordCloudResponse loadTermCloud(int process_id, boolean isConsultation, int max_terms, int n_gram_order) throws SQLException;
+
+    public WordCloudResponse loadTermCloud(
+            List<Integer> comments_or_discussion_thread_ids,
+            boolean isCommentsArray,
+            int max_terms,
+            int n_gram_order
+    ) throws SQLException;
+
 }

@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import javax.sql.DataSource;
@@ -141,6 +142,67 @@ public class PSQLWordCloudDBA extends WordCloudDBA implements IWordCloudDBA {
                 pStmt.setInt(3, limit);
             } else {
                 pStmt.setInt(2, limit);
+            }
+            rSet = pStmt.executeQuery();
+            while (rSet.next()) {
+                res.put(rSet.getString(1), rSet.getDouble(2));
+            }
+        } finally {
+            SQLUtils.release(dbConnection, pStmt, rSet);
+        }
+        WordCloudResponse response = new WordCloudResponse(res);
+        return response;
+    }
+
+    @Override
+    public WordCloudResponse loadTermCloud(List<Integer> comments_or_dtids, boolean comments_array, int limit, int n_gram_order) throws SQLException {
+        logger.info(String.format("loading term cloud for %s ID : %s - max: %d terms",
+                comments_array ? "comments" : "discussions", comments_or_dtids.toString(), limit));
+        LinkedHashMap<String, Double> res = new LinkedHashMap();
+        StringBuilder sb = new StringBuilder();
+        sb.append("(");
+
+        for (int i = 0; i < comments_or_dtids.size() - 1; i++) {
+            sb.append("?,");
+        }
+        sb.append("?) ");
+        String SELECT;
+        if (comments_array) {
+            SELECT = "SELECT term_string, sum(term_frequency) as total_freq "
+                    + "FROM comment_term "
+                    + "INNER JOIN comments ON comments.id = comment_term.comment_id "
+                    + "WHERE comments.id IN " + sb.toString();
+            SELECT += n_gram_order == 0 ? " " : " AND comment_term.n_gram_order = ? ";
+            SELECT += "GROUP BY term_string ORDER BY total_freq DESC LIMIT ?;";
+
+        } else {
+            SELECT = "SELECT term_string, sum(term_frequency) as total_freq "
+                    + "FROM comment_term "
+                    + "INNER JOIN comments ON comments.id = comment_term.comment_id "
+                    + "WHERE comments.discussion_thread_id IN " + sb.toString();
+            SELECT += n_gram_order == 0 ? " " : " AND comment_term.n_gram_order = ? ";
+            SELECT += "GROUP BY term_string ORDER BY total_freq DESC LIMIT ?;";
+        }
+
+        Iterator it = comments_or_dtids.iterator();
+
+        Connection dbConnection = null;
+        PreparedStatement pStmt = null;
+        ResultSet rSet = null;
+
+        try {
+            dbConnection = dataSource.getConnection();
+            pStmt = dbConnection.prepareStatement(SELECT);
+            int cnt = 1;
+            while (it.hasNext()) {
+                Double tmpID = (double) it.next();
+                pStmt.setLong(cnt++, tmpID.longValue());
+            }
+            if (n_gram_order != 0) {
+                pStmt.setInt(cnt++, n_gram_order);
+                pStmt.setInt(cnt++, limit);
+            } else {
+                pStmt.setInt(cnt++, limit);
             }
             rSet = pStmt.executeQuery();
             while (rSet.next()) {

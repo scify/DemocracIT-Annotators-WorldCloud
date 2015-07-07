@@ -63,27 +63,6 @@ public class Extractor extends HttpServlet {
         }
     }
 
-//    /**
-//     * Inject resources at the initialization of the WS
-//     */
-//    @PostConstruct
-//    protected void initialize() {
-//        if (bInit) {
-//            return;
-//        }
-//        // inject datasource connection
-//        Context initContext;
-//        try {
-//            initContext = new InitialContext();
-//            Context envContext = (Context) initContext.lookup("java:/comp/env");
-//            dataSource = (DataSource) envContext.lookup("jdbc/word_cloud");
-//            logger = new BaseEventLogger();
-//            logger = new DBADSEventLogger(dataSource);
-//            bInit = true;
-//        } catch (NamingException ex) {
-//            ex.printStackTrace();
-//        }
-//    }
     /**
      * @param request the request
      * @param response the response
