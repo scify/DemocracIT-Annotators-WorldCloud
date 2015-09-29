@@ -183,13 +183,18 @@ public class WordCloud extends HttpServlet {
         // get servlet context
         ServletContext servletContext = getServletContext();
         // get configuration from file
-        this.workingDir = servletContext.getRealPath("/") + "WEB-INF/";
+        this.workingDir = servletContext.getRealPath(DIR_SEP).endsWith(DIR_SEP)
+                // workaround for tomcat 8
+                ? servletContext.getRealPath(DIR_SEP).concat("WEB-INF").concat(DIR_SEP)
+                : servletContext.getRealPath(DIR_SEP).concat(DIR_SEP).concat("WEB-INF").concat(DIR_SEP);
         // init configuration class
         Configuration configuration = new Configuration(workingDir + Extractor.PROPERTIES);
         // set config working Directory
         configuration.setWorkingDir(workingDir);
         return configuration;
     }
+
+    public static final String DIR_SEP = System.getProperty("file.separator");
 
     public enum Param {
 
