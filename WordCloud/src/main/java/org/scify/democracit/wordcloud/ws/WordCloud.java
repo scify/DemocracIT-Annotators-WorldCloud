@@ -8,6 +8,7 @@ package org.scify.democracit.wordcloud.ws;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -99,8 +100,8 @@ public class WordCloud extends HttpServlet {
                 sMaxTerms = request.getParameter(nextParam);
             } else if (nextParam.equalsIgnoreCase(Param.N_GRAM_ORDER.getDecl())) {
                 n_gram_order = Integer.parseInt(request.getParameter(nextParam));
-                if (n_gram_order != 1 || n_gram_order != 2) {
-                    throw new IllegalArgumentException("n_gram_order 1 | 2");
+                if (n_gram_order != 1 && n_gram_order != 2) {
+                    throw new IllegalArgumentException("accepted n_gram_order values: 1 | 2");
                 }
             } else if (nextParam.equalsIgnoreCase(Param.COMMENT_IDS.getDecl())) {
                 String insert = request.getParameter(nextParam);
@@ -154,7 +155,7 @@ public class WordCloud extends HttpServlet {
             }
             // register finalized
             logger.finalizedActivity(activity_id, iProcessId, sModulName);
-        } catch (Exception ex) {
+        } catch (IOException | SQLException ex) {
             logger.error(activity_id, ex);
         } finally {
             if (out != null) {

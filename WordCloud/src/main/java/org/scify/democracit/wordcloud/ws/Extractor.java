@@ -1,6 +1,8 @@
 package org.scify.democracit.wordcloud.ws;
 
+import java.io.IOException;
 import java.io.PrintStream;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import javax.persistence.EntityManagerFactory;
@@ -43,7 +45,6 @@ public class Extractor extends HttpServlet {
     public static final String PROPERTIES = "wordcloud.properties";
     private DataSource dataSource;
     private ILogger logger;
-    private boolean bInit = false;
 
     private EntityManagerFactory emf;
     public static final String PERSISTENCE_RESOURCE = "org.scify_DemoModel_jar_0.1-SNAPSHOTPU";
@@ -129,7 +130,7 @@ public class Extractor extends HttpServlet {
                     new JSONMessage(sModulName.concat(" Completed succesfully...")).toJSON());
             // respond
             out.print(new JSONMessage("OK").toJSON());
-        } catch (Exception ex) {
+        } catch (IOException | SQLException ex) {
             // register activity error
             logger.error(activity_id, ex);
         } finally {

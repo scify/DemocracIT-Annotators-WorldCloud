@@ -7,6 +7,7 @@ import com.aliasi.tokenizer.RegExFilteredTokenizerFactory;
 import com.aliasi.tokenizer.Tokenizer;
 import com.aliasi.tokenizer.TokenizerFactory;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -25,8 +26,8 @@ public class NGramTokenizer implements ITokenizer {
     }
 
     @Override
-    public ArrayList<String> tokenize(String input, int nGramOrder) {
-        ArrayList<String> nGrams = new ArrayList<>();
+    public List<String> tokenize(String input, int nGramOrder) {
+        List<String> nGrams = new ArrayList<>();
         TokenizerFactory tf = IndoEuropeanTokenizerFactory.INSTANCE;
         Pattern pattern = Pattern.compile("[\\p{L}_]+|[\\!?}]+");
         RegExFilteredTokenizerFactory rtf = new RegExFilteredTokenizerFactory(tf, pattern);

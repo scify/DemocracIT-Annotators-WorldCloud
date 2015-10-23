@@ -32,6 +32,13 @@ public class WordCloudResponse {
         return new Gson().toJson(this, WordCloudResponse.class);
     }
 
+    @Override
+    public String toString() {
+        return "WordCloudResponse{" + "results=" + results + "}";
+    }
+    
+    
+
     class TermFreqPair {
 
         private String term;

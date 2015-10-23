@@ -5,7 +5,7 @@
  */
 package org.scify.democracit.wordcloud.tokenization;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -13,6 +13,6 @@ import java.util.ArrayList;
  */
 public interface ITokenizer {
 
-    public ArrayList<String> tokenize(String input, int nGramOrder);
+    public List<String> tokenize(String input, int nGramOrder);
 
 }

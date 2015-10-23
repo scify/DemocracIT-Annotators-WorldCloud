@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -61,7 +62,6 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
      */
     protected Set<String> elStopWords;
     protected int maxStorageThreshold;
-    protected static final String JSON_STORE_PATH = "/home/gkioumis/Documents/SciFY/DemocracIT/jsonTerms/";
     protected ILemmatizer grLemmatiser;
     protected Configuration conf;
     protected String lang = "el";
@@ -194,8 +194,8 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
      * @param termMap the full term map.
      * @return
      */
-    private ArrayList<TermToStore> generateTermToStoreList(ArrayList<String> sucCands,
-            HashMap<Long, ArrayList<TermResult>> termMap) {
+    private List<TermToStore> generateTermToStoreList(List<String> sucCands,
+            Map<Long, List<TermResult>> termMap) {
         // generate the list that will be stored
         ArrayList<TermToStore> lsRes = new ArrayList<>();
         for (Map.Entry entry : termMap.entrySet()) {
@@ -228,8 +228,8 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
      * @param sucCands the list of bi-grams
      * @return
      */
-    private ArrayList<TermToStore> generateTermToStoreList(HashMap<Long, ArrayList<TermResult>> hmLemmatizedOneWordTerms,
-            ArrayList<String> sucCands) {
+    private List<TermToStore> generateTermToStoreList(Map<Long, List<TermResult>> hmLemmatizedOneWordTerms,
+            List<String> sucCands) {
 
         // construct a set of strings contained in the bi-grams
         // -- these terms will be not stored as single terms, because they will be stored as 
@@ -244,9 +244,9 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
         // init result list: will contain all items to be later stored in storage layer
         ArrayList<TermToStore> lsRes = new ArrayList<>();
         // for each map entry (commentID, term result list)
-        for (Map.Entry<Long, ArrayList<TermResult>> entry : hmLemmatizedOneWordTerms.entrySet()) {
+        for (Map.Entry<Long, List<TermResult>> entry : hmLemmatizedOneWordTerms.entrySet()) {
             Long ID = entry.getKey();
-            ArrayList<TermResult> freqMap = entry.getValue();
+            List<TermResult> freqMap = entry.getValue();
             // for each term - frequency map
             for (Iterator<TermResult> trIter = freqMap.iterator(); trIter.hasNext();) {
                 Long curID = ID;
@@ -351,11 +351,11 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
         HashMap<String, Double> norm_pmiBiTerms = new HashMap<>();
         // obtain one word token frequencies
         logger.info("Generating one word token frequencies...");
-        HashMap<String, Integer> hsOneWordTokens = getDocumentCountPerTermFromCorpus(hmLemmatizedOneWordTerms);
+        Map<String, Integer> hsOneWordTokens = getDocumentCountPerTermFromCorpus(hmLemmatizedOneWordTerms);
         logger.info("Generating one word token frequencies... Done.");
         // obtain two word token frequencies
         logger.info("Generating two word token frequencies...");
-        HashMap<String, Integer> hsTwoWordTokens = getDocumentCountPerTermFromCorpus(hmLemmatizedTwoWordTerms);
+        Map<String, Integer> hsTwoWordTokens = getDocumentCountPerTermFromCorpus(hmLemmatizedTwoWordTerms);
         logger.info("Generating two word token frequencies... Done.");
         logger.info("Calculating NPMI for bi-grams...");
         // For each bi-gram
@@ -397,8 +397,6 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
         // sort map by values
         LinkedHashMap<String, Double> lhmResNorm
                 = (LinkedHashMap<String, Double>) CollectionsCalcs.sortMapByValues(norm_pmiBiTerms, false);
-        // proceed with storage operations // TODO implement
-//        storeResults(lhmResNorm);
         return lhmResNorm;
     }
 
@@ -428,7 +426,7 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
         }
         logger.info("Done");
         // store lemmatized single word tokens
-        ArrayList<TermToStore> lsRes;
+        List<TermToStore> lsRes;
         // calculate one-word tokens to store : Omits one word tokens that are contained in the bi-grams.
         logger.info("Calculating single terms to store in DB...");
         lsRes = generateTermToStoreList(hmLemmatizedOneWordTerms, sucCands);
@@ -452,9 +450,9 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
         storage.batchStoreTerms(lsRes, 2);
     }
 
-    private <T> HashMap<String, Integer> getDocumentCountPerTermFromCorpus(HashMap<Long, ArrayList<T>> corpus) {
+    private <T> Map<String, Integer> getDocumentCountPerTermFromCorpus(HashMap<Long, ArrayList<T>> corpus) {
         // init result map
-        HashMap<String, Integer> hmRes = new HashMap<>();
+        Map<String, Integer> hmRes = new HashMap<>();
         for (ArrayList<T> tmpTerms : corpus.values()) {
             // for each term - freq map
             for (T conRes : tmpTerms) {
@@ -480,9 +478,9 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
         return hmRes;
     }
 
-    private <T> HashMap<String, Integer> getTermFreqsFromCorpus(HashMap<Long, ArrayList<T>> corpus) {
+    private <T> Map<String, Integer> getTermFreqsFromCorpus(HashMap<Long, ArrayList<T>> corpus) {
         // init result map
-        HashMap<String, Integer> hmRes = new HashMap<>();
+        Map<String, Integer> hmRes = new HashMap<>();
         for (ArrayList<T> tmpTerms : corpus.values()) {
             // for each term - freq map
             for (T conRes : tmpTerms) {
@@ -508,7 +506,7 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
     }
 
     /**
-     * TODO: change the freq calcs.
+     *
      *
      * @param aFreq the frequency (number of documents found in / total number
      * of documents) of the token a

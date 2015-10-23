@@ -2,7 +2,6 @@ package org.scify.democracit.wordcloud.freqextract;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -11,7 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.scify.democracit.wordcloud.lemmatization.ILemmatizer;
-import org.scify.democracit.demoutils.logging.DBADSEventLogger;
 import org.scify.democracit.demoutils.logging.ILogger;
 import org.scify.democracit.wordcloud.tokenization.ITokenizer;
 import org.scify.democracit.wordcloud.tokenization.NGramTokenizer;
@@ -40,7 +38,7 @@ public class SimpleFrequencyExtractor implements IFreqExtractor {
         this.loc = locale;
         this.lemmatizer = null;
         this.logger = logger;
-        this.STOPWORDS = new HashSet<>();
+        this.STOPWORDS = new HashSet();
     }
 
     /**
@@ -55,7 +53,7 @@ public class SimpleFrequencyExtractor implements IFreqExtractor {
         this.loc = locale;
         this.lemmatizer = lemmatizer;
         this.logger = logger;
-        this.STOPWORDS = new HashSet<>();
+        this.STOPWORDS = new HashSet();
     }
 
     /**
@@ -76,8 +74,8 @@ public class SimpleFrequencyExtractor implements IFreqExtractor {
             int nGramOrder)
             throws IOException {
 
-        Map<String, Double> sentenceHashMap = new HashMap<>();
-        Map<String, Float> finalHashMap = new HashMap<>();
+        Map<String, Double> sentenceHashMap = new HashMap();
+        Map<String, Float> finalHashMap = new HashMap();
 
         // If we should remove stopwords
         if (removeStopWords) {
@@ -99,7 +97,7 @@ public class SimpleFrequencyExtractor implements IFreqExtractor {
         // For every line
         for (String line : lines) {
             // tokenize it
-            ArrayList<String> tokens = tokenizer.tokenize(line, nGramOrder);
+            List<String> tokens = tokenizer.tokenize(line, nGramOrder);
             String token;
             String ngram;
             // for every token
@@ -130,14 +128,14 @@ public class SimpleFrequencyExtractor implements IFreqExtractor {
                 // Check whether the token exists in the
                 // token-frequency map
                 ngram = token;
-                Double sentenceTokenCount = (Double) sentenceHashMap.get(ngram);
+                Double sentenceTokenCount = sentenceHashMap.get(ngram);
                 // If it does not, initialize its value
                 if (sentenceTokenCount == null) {
-                    sentenceTokenCount = new Double(0.0);
+                    sentenceTokenCount = 0.0;
                 }
-                double temp = sentenceTokenCount.doubleValue() + 1.0;
+                double temp = sentenceTokenCount + 1.0;
                 // Update the map
-                sentenceHashMap.put(ngram, new Double(temp));
+                sentenceHashMap.put(ngram, temp);
             }
         }
 
