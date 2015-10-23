@@ -19,6 +19,7 @@ import org.scify.democracit.dao.model.Comments;
 import org.scify.democracit.demoutils.DataAccess.DBUtils.JSONMessage;
 import org.scify.democracit.demoutils.DataAccess.ds.CommentsJPARetriever;
 import org.scify.democracit.demoutils.DataAccess.ds.ICommentsRetriever;
+import org.scify.democracit.demoutils.logging.BaseEventLogger;
 import org.scify.democracit.demoutils.logging.DBAJPAEventLogger;
 import org.scify.democracit.wordcloud.dba.IWordCloudDBA;
 import org.scify.democracit.wordcloud.impl.IWordCloudExtractor;
@@ -53,6 +54,8 @@ public class Extractor extends HttpServlet {
     public void init() throws ServletException {
         // init persistence manager
         emf = Persistence.createEntityManagerFactory(PERSISTENCE_RESOURCE);
+//        // debug
+//        logger = new BaseEventLogger();
         // init logging
         logger = DBAJPAEventLogger.getInstance(emf);
     }
@@ -97,7 +100,7 @@ public class Extractor extends HttpServlet {
         }
         // the consultation / article ID to calculate
         int iProcessId = consultation_id == 0 ? article_id : consultation_id;
-        Configuration configuration = loadConfig();
+        Configuration configuration = loadConfig(getServletContext());
         // acquire module name
         String sModulName = configuration.getModuleName();
         // log initiation
@@ -149,15 +152,18 @@ public class Extractor extends HttpServlet {
         return res;
     }
 
-    private Configuration loadConfig() {
-        // get servlet context
-        ServletContext servletContext = getServletContext();
+    public static Configuration loadConfig(ServletContext servletContext) {
         // get configuration from file
-        this.workingDir = servletContext.getRealPath("/") + "WEB-INF/";
+        String workingDir = servletContext.getRealPath(DIR_SEP).endsWith(DIR_SEP)
+                // workaround for tomcat 8
+                ? servletContext.getRealPath(DIR_SEP).concat("WEB-INF").concat(DIR_SEP)
+                : servletContext.getRealPath(DIR_SEP).concat(DIR_SEP).concat("WEB-INF").concat(DIR_SEP);
         // init configuration class
-        Configuration configuration = new Configuration(workingDir + PROPERTIES);
+        Configuration configuration = new Configuration(workingDir + Extractor.PROPERTIES);
         // set config working Directory
         configuration.setWorkingDir(workingDir);
         return configuration;
     }
+
+    public static final String DIR_SEP = System.getProperty("file.separator");
 }

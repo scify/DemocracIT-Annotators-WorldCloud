@@ -11,10 +11,9 @@
             removeAbandonedTimeout="600" 
             testOnBorrow="true" 
             type="javax.sql.DataSource" 
-            validationQuery="SELECT 1"         
+            validationQuery="SELECT 1"
             username="enter_username" 
             password="enter_password" 
             url="enter_db_host_url"
   />
-
 </Context>
