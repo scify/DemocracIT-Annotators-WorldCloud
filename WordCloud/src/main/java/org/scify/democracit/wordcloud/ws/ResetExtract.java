@@ -5,6 +5,7 @@ import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
@@ -14,11 +15,16 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.scify.democracit.dao.jpacontroller.CommentTermJpaController;
+import org.scify.democracit.dao.jpacontroller.ConsultationJpaController;
+import org.scify.democracit.dao.jpacontroller.exceptions.NonexistentEntityException;
+import org.scify.democracit.dao.model.CommentTerm;
 import org.scify.democracit.dao.model.Comments;
+import org.scify.democracit.dao.model.Consultation;
 import org.scify.democracit.demoutils.DataAccess.DBUtils.JSONMessage;
 import org.scify.democracit.demoutils.DataAccess.ds.CommentsJPARetriever;
 import org.scify.democracit.demoutils.DataAccess.ds.ICommentsRetriever;
-import org.scify.democracit.demoutils.logging.DBAJPAEventLogger;
+import org.scify.democracit.demoutils.logging.BaseEventLogger;
 import org.scify.democracit.wordcloud.dba.IWordCloudDBA;
 import org.scify.democracit.wordcloud.impl.IWordCloudExtractor;
 import org.scify.democracit.wordcloud.impl.InRAMWordCloudExtractor;
@@ -28,10 +34,11 @@ import org.scify.democracit.wordcloud.dba.JPAWordCloud;
 import org.scify.democracit.wordcloud.utils.Configuration;
 
 /**
- * Servlet implementation class Extractor
+ * execute serially for all consultations: remove extracted tokens, and generate
+ * and insert new.
  */
-@WebServlet(name = "Extractor", urlPatterns = {"/Extractor"})
-public class Extractor extends HttpServlet {
+@WebServlet(name = "ResetExtractor", urlPatterns = {"/ResetExtractor"})
+public class ResetExtract extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
     /**
@@ -50,9 +57,9 @@ public class Extractor extends HttpServlet {
         // init persistence manager
         emf = Persistence.createEntityManagerFactory(PERSISTENCE_RESOURCE);
 //        // debug
-//        logger = new BaseEventLogger(); // TODO uncomment before deploy to production
+        logger = new BaseEventLogger();
         // init logging
-        logger = DBAJPAEventLogger.getInstance(emf);
+//        logger = DBAJPAEventLogger.getInstance(emf);
     }
 
     @Override
@@ -78,59 +85,53 @@ public class Extractor extends HttpServlet {
         PrintStream out = null;
         int consultation_id;
         int article_id;
-        String sConsultationID = request.getParameter("consultation_id");
-        if (sConsultationID == null) {
-            consultation_id = 0;
-        } else {
-            consultation_id = Integer.parseInt(sConsultationID);
-        }
-        String sArticleID = request.getParameter("article_id");
-        if (sArticleID == null) {
-            article_id = 0;
-        } else {
-            article_id = Integer.parseInt(sArticleID);
-        }
-        if (consultation_id + article_id == 0) {
-            throw new IllegalArgumentException("Provide an Article ID OR a consultation ID please");
-        }
-        // the consultation / article ID to calculate
-        int iProcessId = consultation_id == 0 ? article_id : consultation_id;
+        String code = request.getParameter("reset_code");
         Configuration configuration = loadConfig(getServletContext());
+        if (!code.equals(configuration.getResetCode())) {
+            throw new IllegalArgumentException("invalid reset code");
+        }
         // acquire module name
         String sModulName = configuration.getModuleName();
-        // log initiation
-        long activity_id = logger.registerActivity(iProcessId, sModulName,
-                new JSONMessage(sModulName.concat(" Initializing...")).toJSON());
-        // initiate process
-        Collection<Comments> cComments = new ArrayList<>();
+
         IWordCloudDBA storage;
         IWordCloudExtractor extractor;
         ICommentsRetriever comments_retriever;
+        ConsultationJpaController cons_con = new ConsultationJpaController(emf);
+        CommentTermJpaController term_controller = new CommentTermJpaController(emf);
+        Collection<Comments> cComments = new ArrayList();
         try {
             out = new PrintStream(response.getOutputStream());
+            // load all consultations
             // init storage module
-//            storage = new PSQLWordCloudDBA(dataSource, configuration, logger);
             storage = new JPAWordCloud(emf, logger);
             // initialize content/segment fetcher module
             comments_retriever = CommentsJPARetriever.getInstance(emf);
-            if (consultation_id != 0) {
+
+            List<Consultation> allConsultations = cons_con.findConsultationEntities();
+
+            for (Consultation cons : allConsultations) {
+                consultation_id = cons.getId().intValue();
+                // delete all comment_terms for this consultation
+                Collection<CommentTerm> findCommentTermsPerConsultation = term_controller.findCommentTermsPerConsultation(cons);
+                for (CommentTerm each : findCommentTermsPerConsultation) {
+                    try {
+                        term_controller.destroy(each.getId());
+                    } catch (NonexistentEntityException ex) {
+                        logger.error(-1l, ex);
+                    }
+                }
+                // load all comments for this consultation
                 cComments = comments_retriever.getCommentsPerConsultationID(consultation_id);
-            } else if (article_id != 0) {
-                cComments = comments_retriever.getCommentsPerArticleID(article_id);
+                cComments = cleanComments(cComments);
+                // load extractor. 
+                extractor = new InRAMWordCloudExtractor(storage, configuration, logger);
+                // generate the term - freq map and store to DB
+                extractor.generateWordCloud(cComments, consultation_id, true);
             }
-            cComments = cleanComments(cComments);
-            // load extractor. Keep all data in RAM, and store in one DB thread afterwards
-            extractor = new InRAMWordCloudExtractor(storage, configuration, logger);
-            // generate the term - freq map and store to DB
-            extractor.generateWordCloud(cComments, iProcessId, consultation_id != 0);
-            // register activity completed
-            logger.finalizedActivity(activity_id, iProcessId, sModulName,
-                    new JSONMessage(sModulName.concat(" Completed succesfully...")).toJSON());
-            // respond
             out.print(new JSONMessage("OK").toJSON());
         } catch (IOException | SQLException ex) {
             // register activity error
-            logger.error(activity_id, ex);
+            logger.error(-1l, ex);
         } finally {
             if (out != null) {
                 out.close();
@@ -154,7 +155,7 @@ public class Extractor extends HttpServlet {
                 ? servletContext.getRealPath(DIR_SEP).concat("WEB-INF").concat(DIR_SEP)
                 : servletContext.getRealPath(DIR_SEP).concat(DIR_SEP).concat("WEB-INF").concat(DIR_SEP);
         // init configuration class
-        Configuration configuration = new Configuration(workingDir + Extractor.PROPERTIES);
+        Configuration configuration = new Configuration(workingDir + ResetExtract.PROPERTIES);
         // set config working Directory
         configuration.setWorkingDir(workingDir);
         return configuration;

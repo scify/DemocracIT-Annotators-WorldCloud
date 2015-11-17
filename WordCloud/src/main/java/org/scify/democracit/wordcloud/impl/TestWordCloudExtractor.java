@@ -34,7 +34,7 @@ import org.scify.democracit.wordcloud.utils.Configuration;
  *
  * @author George K.<gkiom@iit.demokritos.gr>
  */
-public class InRAMWordCloudExtractor implements IWordCloudExtractor {
+public class TestWordCloudExtractor implements IWordCloudExtractor {
 
     /**
      * self explainable. Unlemmatized single word tokens
@@ -78,7 +78,7 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
      * @param logger the Logger implementation
      * @throws java.io.IOException
      */
-    public InRAMWordCloudExtractor(IWordCloudDBA storage,
+    public TestWordCloudExtractor(IWordCloudDBA storage,
             Configuration config, ILogger logger) throws IOException {
 
         this.logger = logger;
@@ -347,8 +347,8 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
     private LinkedHashMap<String, Double> calculateBiGramTerms(long id, int freqThreshold, int corpusSize, boolean IsConsultation) {
 
         // init result map
-        HashMap<String, Double> pmiBiTerms = new HashMap();
-        HashMap<String, Double> norm_pmiBiTerms = new HashMap();
+        HashMap<String, Double> pmiBiTerms = new HashMap<>();
+        HashMap<String, Double> norm_pmiBiTerms = new HashMap<>();
         // obtain one word token frequencies
         logger.info("Generating one word token frequencies...");
         Map<String, Integer> hsOneWordTokens = getDocumentCountPerTermFromCorpus(hmLemmatizedOneWordTerms);
@@ -434,7 +434,7 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
         hmUnLemmatizedOneWordTerms.clear();
         logger.info("Done");
         // store one word terms
-        storage.batchStoreTerms(lsRes, 1);
+//        storage.batchStoreTerms(lsRes, 1);
 //        for (TermToStore termToStore : lsRes) {
 //            storage.storeTerm(termToStore.getTerm(), termToStore.getFreq(), termToStore.getCommentID(), 1);
 //        }
@@ -447,12 +447,12 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
 //        System.out.println(lsRes);
 
         // store the bi-gram list to the DB
-        storage.batchStoreTerms(lsRes, 2);
+//        storage.batchStoreTerms(lsRes, 2);
     }
 
     private <T> Map<String, Integer> getDocumentCountPerTermFromCorpus(HashMap<Long, ArrayList<T>> corpus) {
         // init result map
-        Map<String, Integer> hmRes = new HashMap();
+        Map<String, Integer> hmRes = new HashMap<>();
         for (ArrayList<T> tmpTerms : corpus.values()) {
             // for each term - freq map
             for (T conRes : tmpTerms) {
@@ -480,7 +480,7 @@ public class InRAMWordCloudExtractor implements IWordCloudExtractor {
 
     private <T> Map<String, Integer> getTermFreqsFromCorpus(HashMap<Long, ArrayList<T>> corpus) {
         // init result map
-        Map<String, Integer> hmRes = new HashMap();
+        Map<String, Integer> hmRes = new HashMap<>();
         for (ArrayList<T> tmpTerms : corpus.values()) {
             // for each term - freq map
             for (T conRes : tmpTerms) {

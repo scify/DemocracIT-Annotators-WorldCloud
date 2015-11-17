@@ -1021,4 +1021,10 @@ docx
 odt
 xls
 xlsx
+asd
+asdf
+asdfa
+asdfas
+asdfasd
+asdfasdf
 

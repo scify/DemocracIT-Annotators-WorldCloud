@@ -18,20 +18,20 @@ import org.scify.democracit.dao.model.Comments;
 import org.scify.democracit.demoutils.DataAccess.DBUtils.JSONMessage;
 import org.scify.democracit.demoutils.DataAccess.ds.CommentsJPARetriever;
 import org.scify.democracit.demoutils.DataAccess.ds.ICommentsRetriever;
-import org.scify.democracit.demoutils.logging.DBAJPAEventLogger;
+import org.scify.democracit.demoutils.logging.BaseEventLogger;
 import org.scify.democracit.wordcloud.dba.IWordCloudDBA;
 import org.scify.democracit.wordcloud.impl.IWordCloudExtractor;
-import org.scify.democracit.wordcloud.impl.InRAMWordCloudExtractor;
 import org.scify.democracit.demoutils.logging.ILogger;
 import org.scify.democracit.demoutils.text.HtmlDocumentCleaner;
 import org.scify.democracit.wordcloud.dba.JPAWordCloud;
+import org.scify.democracit.wordcloud.impl.TestWordCloudExtractor;
 import org.scify.democracit.wordcloud.utils.Configuration;
 
 /**
  * Servlet implementation class Extractor
  */
-@WebServlet(name = "Extractor", urlPatterns = {"/Extractor"})
-public class Extractor extends HttpServlet {
+@WebServlet(name = "TestExtractor", urlPatterns = {"/TestExtractor"})
+public class TestExtractor extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
     /**
@@ -49,10 +49,10 @@ public class Extractor extends HttpServlet {
     public void init() throws ServletException {
         // init persistence manager
         emf = Persistence.createEntityManagerFactory(PERSISTENCE_RESOURCE);
-//        // debug
-//        logger = new BaseEventLogger(); // TODO uncomment before deploy to production
-        // init logging
-        logger = DBAJPAEventLogger.getInstance(emf);
+        // debug
+        logger = new BaseEventLogger(); // TODO uncomment before deploy to production
+//        // init logging
+//        logger = DBAJPAEventLogger.getInstance(emf);
     }
 
     @Override
@@ -120,7 +120,7 @@ public class Extractor extends HttpServlet {
             }
             cComments = cleanComments(cComments);
             // load extractor. Keep all data in RAM, and store in one DB thread afterwards
-            extractor = new InRAMWordCloudExtractor(storage, configuration, logger);
+            extractor = new TestWordCloudExtractor(storage, configuration, logger);
             // generate the term - freq map and store to DB
             extractor.generateWordCloud(cComments, iProcessId, consultation_id != 0);
             // register activity completed
@@ -154,11 +154,10 @@ public class Extractor extends HttpServlet {
                 ? servletContext.getRealPath(DIR_SEP).concat("WEB-INF").concat(DIR_SEP)
                 : servletContext.getRealPath(DIR_SEP).concat(DIR_SEP).concat("WEB-INF").concat(DIR_SEP);
         // init configuration class
-        Configuration configuration = new Configuration(workingDir + Extractor.PROPERTIES);
+        Configuration configuration = new Configuration(workingDir + TestExtractor.PROPERTIES);
         // set config working Directory
         configuration.setWorkingDir(workingDir);
         return configuration;
     }
-
     public static final String DIR_SEP = System.getProperty("file.separator");
 }

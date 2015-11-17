@@ -142,4 +142,7 @@ public class Configuration {
         return Integer.valueOf(properties.getProperty("max_terms", "200"));
     }
 
+    public Object getResetCode() {
+        return properties.getProperty("reset_code");
+    }
 }

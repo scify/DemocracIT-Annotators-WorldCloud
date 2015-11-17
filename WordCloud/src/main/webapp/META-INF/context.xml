@@ -7,13 +7,12 @@
             maxIdle="5" 
             maxWait="10000" 
             name="jdbc/word_cloud" 
-            removeAbandoned="true" 
             removeAbandonedTimeout="600" 
             testOnBorrow="true" 
+            removeAbandoned="true" 
             type="javax.sql.DataSource" 
-            validationQuery="SELECT 1"
-            username="enter_username" 
-            password="enter_password" 
-            url="enter_db_host_url"
-  />
+            url="enter_url_here" 
+            username="username" 
+            password="pw"
+            validationQuery="SELECT 1"/>
 </Context>

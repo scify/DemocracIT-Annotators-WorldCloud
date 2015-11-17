@@ -12,15 +12,16 @@ import org.apache.commons.io.IOUtils;
 import org.scify.democracit.wordcloud.lemmatization.ILemmatizer;
 import org.scify.democracit.demoutils.logging.ILogger;
 import org.scify.democracit.wordcloud.tokenization.ITokenizer;
-import org.scify.democracit.wordcloud.tokenization.NGramTokenizer;
+import org.scify.democracit.wordcloud.tokenization.NormalizedNGramTokenizer;
 import org.scify.democracit.wordcloud.utils.Configuration;
+import org.scify.democracit.wordcloud.utils.StringUtils;
 
 /**
  * Performs simple term frequency extraction
  *
  * @author George K. <gkiom@scify.org>
  */
-public class SimpleFrequencyExtractor implements IFreqExtractor {
+public class NormalizedFrequencyExtractor implements IFreqExtractor {
 
     private Set<String> stopwords;
     private final Locale loc;
@@ -34,7 +35,7 @@ public class SimpleFrequencyExtractor implements IFreqExtractor {
      * @param locale the locale
      * @param logger
      */
-    public SimpleFrequencyExtractor(Locale locale, ILogger logger) {
+    public NormalizedFrequencyExtractor(Locale locale, ILogger logger) {
         this.loc = locale;
         this.lemmatizer = null;
         this.logger = logger;
@@ -49,7 +50,7 @@ public class SimpleFrequencyExtractor implements IFreqExtractor {
      * @param lemmatizer the lemmatizer to load
      * @param logger
      */
-    public SimpleFrequencyExtractor(Locale locale, ILemmatizer lemmatizer, ILogger logger) {
+    public NormalizedFrequencyExtractor(Locale locale, ILemmatizer lemmatizer, ILogger logger) {
         this.loc = locale;
         this.lemmatizer = lemmatizer;
         this.logger = logger;
@@ -81,7 +82,7 @@ public class SimpleFrequencyExtractor implements IFreqExtractor {
 
         // init tokenizer
         this.tokenizer
-                = new NGramTokenizer(removeStopWords, stopwords, loc);
+                = new NormalizedNGramTokenizer(removeStopWords, stopwords, loc);
 
         // Read all the lines from the content
         List<String> lines = null;
@@ -116,7 +117,8 @@ public class SimpleFrequencyExtractor implements IFreqExtractor {
                     }
                     if (!removeStopWords && stopwords != null) {
                         // ignore bi-grams containing STOPWORDS
-                        if (stopwords.contains(wordA) || stopwords.contains(wordB)) {
+                        if (stopwords.contains(StringUtils.normalize(wordA))
+                                || stopwords.contains(StringUtils.normalize(wordB))) {
                             continue;
                         }
                     }
@@ -164,17 +166,25 @@ public class SimpleFrequencyExtractor implements IFreqExtractor {
     }
 
     private void initStopwords(boolean removeStopWords, Set<String> stopWordsSet, int nGramOrder) throws IllegalArgumentException {
+        Set<String> normalized_stopwords = new HashSet();
         // If we should remove stopwords
         if (removeStopWords) {
             if (stopWordsSet == null || stopWordsSet.isEmpty()) {
                 throw new IllegalArgumentException("if called with 'removeStopWords=true, you MUST provide a stopword set");
             }
+            for (String each : stopWordsSet) {
+                normalized_stopwords.add(StringUtils.normalize(each));
+            }
             // update the list of stopwords
-            stopwords = stopWordsSet;
+            stopwords = normalized_stopwords;
         }
         if (!removeStopWords && (nGramOrder == 2 && !stopWordsSet.isEmpty())) {
             // update stopword set for bigram extraction as well
-            stopwords = stopWordsSet;
+            for (String each : stopWordsSet) {
+                normalized_stopwords.add(StringUtils.normalize(each));
+            }
+            // update the list of stopwords
+            stopwords = normalized_stopwords;
         }
     }
 }
